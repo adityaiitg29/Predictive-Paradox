@@ -43,7 +43,7 @@ Weather sensor short drop-outs were interpolated the same limit 3 hours. The wea
 
 ->To help the Model understand time patterns, I created meaningful features from the data.
 
-2a:Calendar Features
+2a: Calendar Features
 
 |Feature : Why|
 
@@ -63,7 +63,7 @@ Weather sensor short drop-outs were interpolated the same limit 3 hours. The wea
 
 ->Cyclical encoding is important. Without it, a tree model would have to learn that hour 23 and hour 0 are similar by coincidence — cyclical features make this relationship explicit.
 
-2b:Lag Features
+2b: Lag Features
 
 ->The most powerful feature group. Each feature is `demand_mw` at a particular number of hours in the past:
 
@@ -81,7 +81,7 @@ Weather sensor short drop-outs were interpolated the same limit 3 hours. The wea
 
 -> `df['demand_mw'].shift(n)` where n ≥ 1. Every lag strictly uses information from the past, never the current or future hour.
 
-2c:Rolling Features
+2c: Rolling Features
 
 ->Computed over shifted demand (`shift(1)` before `.rolling()`) to prevent leakage:
 
@@ -95,7 +95,7 @@ Weather sensor short drop-outs were interpolated the same limit 3 hours. The wea
 
 -`roll_min_6/24/168` : Recent trough 
 
-2d:Trend Features
+2d: Trend Features
 
 |Feature : Formula : Why|
 
@@ -108,87 +108,114 @@ Weather sensor short drop-outs were interpolated the same limit 3 hours. The wea
 
 ->Temperature is top external driver of electricity demand — it drives air conditioning (cooling load in summer) and heating load in winter.
 
-3a:Weather Colunms Used
-`temp` : 2m air temperature (°C)
+3a: Weather Colunms Used
 
-`humidity` :relative humidity (%)
+-`temp` : 2m air temperature (°C)
 
-`feels_like`:apparent temperature (accounts for wind chill / heat index)
+-`humidity` :relative humidity (%)
+
+-`feels_like`:apparent temperature (accounts for wind chill / heat index)
 
 `precip`: precipitation (mm/hour)
 
-`cloud_cover`:cloud cover (%)
+-`cloud_cover`:cloud cover (%)
 
-`sunshine_s`: sunshine duration per hour (seconds)
+-`sunshine_s`: sunshine duration per hour (seconds)
 
-3b:Engineered Weather Features
+3b: Engineered Weather Features
 
-For each raw weather variable `wf`:
-`{wf}_lag1`:value at time t (shifted by 1 to be ultra-conservative)
-`{wf}_roll24` : 24-hour rolling mean (smooths out hourly noise)
+->For each raw weather variable `wf`:
 
-3c:Additional Features
+-`{wf}_lag1`:value at time t (shifted by 1 to be ultra-conservative)
+
+-`{wf}_roll24` : 24-hour rolling mean (smooths out hourly noise)
+
+3c: Additional Features
 
 | Feature : Formula : Why |
 
-`heat_stress` : `temp_lag1 × humidity_lag1 / 100` : High temp + high humidity → non-linear AC demand surge (heat index proxy) 
-`temp_sq` : `temp_lag1²` : AC demand increases quadratically with temperature above ~26°C 
-`is_rain` : `precip_lag1 > 0.5` : Rain reduces mobility, shifts demand timing 
-`cool_night` : `temp_lag1 < 18 & hour < 6` : Cool nights reduce night-time AC baseline 
+-`heat_stress` : `temp_lag1 × humidity_lag1 / 100` : High temp + high humidity → non-linear AC demand surge (heat index proxy)
+
+-`temp_sq` : `temp_lag1²` : AC demand increases quadratically with temperature above 26°C 
+
+-`is_rain` : `precip_lag1 > 0.5` : Rain reduces mobility, shifts demand timing 
+
+-`cool_night` : `temp_lag1 < 18 & hour < 6` : Cool nights reduce night-time AC baseline 
 
 
-[4] Economic Feature Integration
+##4. Economic Feature Integration
 
-PROBLEM => The economic dataset is annual; we need a value for every hourly row.
+-> PROBLEM : The economic dataset is annual; we need a value for every hourly row.
 
-APPROACH:
+#APPROACH:
+
 1. Selected key indicators 
-   `gdp_per_capita`:reflects overall economic growth
-   `urban_pop_pct`:higher electricity usage in cities
+   -`gdp_per_capita`:reflects overall economic growth
+   
+   -`urban_pop_pct`:higher electricity usage in cities
 
-2. Coverted yearly data to hourly
-   Filled each year's value across all hours of that year
-   Missing years handled using forward fill
-   Merged with main dataset using the 'year' column
+3. Coverted yearly data to hourly
+
+   -Filled each year's value across all hours of that year
+   
+   -Missing years handled using forward fill
+   
+   -Merged with main dataset using the 'year' column
 
 NO Data leakage: the economic data is only used for that same year and Model doesn't use future information.
 
 
-[5] Validation Design (Zero Leakage)
+##5. Validation Design (Zero Leakage)
 
 Data Split:
+
    TRAINING SET (~67,000 rows)-> From 2015 t0 2022
+   
    TEST SET  (8,760 rows)-> 2023
 
 Why this is valid:
+
  Model is evaluated on completely unseen future data  
+ 
  All features use only past information  
+ 
  Prevents data leakage and ensures realistic performance  
 
 
-[6] Model Results
+##6. Model Results
 
 | Model : MAPE : Notes |
 
 GradientBoostingRegressor : 4.5%* : Main model — sharper at capturing non-linearities 
-RandomForestRegressor : 5.0% : Ensemble partner — more robust to outliers |
+
+RandomForestRegressor : 5.0% : Ensemble partner — more robust to outliers 
+
 Weighted Ensemble (60/40) : 4.6% : Best generalisation 
 
 Exact figures will appear in your terminal after running the script
 
-[7] Feature Importances — Key Drivers
+##7. Feature Importances — Key Drivers
 
 |Rank : Feature : Approximate Importance : What It Means |
-
+ 
  1 : `lag_1` : 80% : Electricity demand is highly inertial — next hour ≈ this hour ± small  
+ 
  2 : `lag_24` : 6% : Daily seasonality — same hour yesterday is very predictive 
+ 
  3 : `hour_cos` : 2.5% : Diurnal cycle 
+ 
  4 : `hour_sin` : 2.5% : Diurnal cycle 
+ 
  5 : `roll_mean_24` : 1.5% : Recent demand baseline 
+ 
  6 : `temp_lag1` : 1.0% : Temperature effect on AC/cooling load 
+ 
  7 : `trend_24h` : 0.8% : Is today's demand trending up or down vs yesterday? 
+ 
  8 : `heat_stress` : 0.6% : Combined temp + humidity drives non-linear AC spike 
+ 
  9 : `lag_168` : ~0.4% : Weekly seasonality 
+ 
  10 : `humidity_lag1` : 0.3% | Supports heat stress calculation
 
 
