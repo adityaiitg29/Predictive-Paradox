@@ -222,7 +222,10 @@ Why this is valid:
 Key Insight:
 
 1.Electricity demand is mainly driven by recent demand (lag features).
+
 2.Strong daily and weekly patterns exist.
+
 3.Weather (especially temperature) has secondary impact.
+
 4.Economic factors contribute to long-term trends.
 
