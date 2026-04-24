@@ -3,8 +3,11 @@
 ## Objective: To Predict Next-Hour Electricity Demand Forecasting Using Historical, Weather Data, Economic Data.
 
 -Models Used: GradientBoostingRegressor + RandomForestRegressor (60/40 ensemble) 
+
 -Metric: MAPE on chronological hold-out of 2023 
--Expected MAPE: 4–5% (improved from 5% baseline without weather) 
+
+-Expected MAPE: 4–5% (improved from 5% baseline without weather)
+
 -Features Used: 44 engineered features across 4 categories 
 
 ##1. Handling Missing Data & Outliers
@@ -38,7 +41,7 @@ Weather sensor short drop-outs were interpolated the same limit 3 hours. The wea
 
 ##2. Feature Engineering
 
-To help the Model understand time patterns, I created meaningful features from the data.
+->To help the Model understand time patterns, I created meaningful features from the data.
 
 2a:Calendar Features
 
@@ -58,51 +61,64 @@ To help the Model understand time patterns, I created meaningful features from t
 
 `is_evening_peak` (18–21h): High Demand Periods
 
-Cyclical encoding is important. Without it, a tree model would have to learn that hour 23 and hour 0 are similar by coincidence — cyclical features make this relationship explicit.
+->Cyclical encoding is important. Without it, a tree model would have to learn that hour 23 and hour 0 are similar by coincidence — cyclical features make this relationship explicit.
 
 2b:Lag Features
 
-The most powerful feature group. Each feature is `demand_mw` at a particular number of hours in the past:
+->The most powerful feature group. Each feature is `demand_mw` at a particular number of hours in the past:
 
 |Lag : Captures|
 
- `lag_1`, `lag_2`, `lag_3`: Very recent trend 
- `lag_6`, `lag_12`: Intra-day pattern up to half a day 
- `lag_24` : Same hour yesterday  
- `lag_48` : Same hour two days ago 
- `lag_168` : Same hour last week 
+ -`lag_1`, `lag_2`, `lag_3`: Very recent trend
+ 
+ -`lag_6`, `lag_12`: Intra-day pattern up to half a day 
+ 
+ -`lag_24` : Same hour yesterday  
+ 
+ -`lag_48` : Same hour two days ago 
+ 
+ -`lag_168` : Same hour last week 
 
-=> `df['demand_mw'].shift(n)` where n ≥ 1. Every lag strictly uses information from the past, never the current or future hour.
+-> `df['demand_mw'].shift(n)` where n ≥ 1. Every lag strictly uses information from the past, never the current or future hour.
 
 2c:Rolling Features
 
-Computed over shifted demand (`shift(1)` before `.rolling()`) to prevent leakage:
+->Computed over shifted demand (`shift(1)` before `.rolling()`) to prevent leakage:
 
-Feature : Purpose 
+|Feature : Purpose |
 
-`roll_mean_6/24/168` : Baseline demand level over recent period 
-`roll_std_6/24/168` :Demand volatility — high std signals unstable period 
-`roll_max_6/24/168` : Recent peak — capacity signal 
-`roll_min_6/24/168` : Recent trough 
+-`roll_mean_6/24/168` : Baseline demand level over recent period 
+
+-`roll_std_6/24/168` :Demand volatility — high std signals unstable period 
+
+-`roll_max_6/24/168` : Recent peak — capacity signal 
+
+-`roll_min_6/24/168` : Recent trough 
 
 2d:Trend Features
 
-Feature : Formula : Why
+|Feature : Formula : Why|
 
-`trend_24h`:`lag_1 − lag_25` :Is demand higher or lower than this time yesterday? 
-`trend_1h` : `lag_1 − lag_2` : Is demand rising or falling right now? 
+-`trend_24h`:`lag_1 − lag_25` :Is demand higher or lower than this time yesterday?
+
+-`trend_1h` : `lag_1 − lag_2` : Is demand rising or falling right now? 
 
 
-[3] Weather Feature Engineering
+##3. Weather Feature Engineering
 
-Temperature is top external driver of electricity demand — it drives air conditioning (cooling load in summer) and heating load in winter.
+->Temperature is top external driver of electricity demand — it drives air conditioning (cooling load in summer) and heating load in winter.
 
 3a:Weather Colunms Used
 `temp` : 2m air temperature (°C)
+
 `humidity` :relative humidity (%)
+
 `feels_like`:apparent temperature (accounts for wind chill / heat index)
+
 `precip`: precipitation (mm/hour)
+
 `cloud_cover`:cloud cover (%)
+
 `sunshine_s`: sunshine duration per hour (seconds)
 
 3b:Engineered Weather Features
