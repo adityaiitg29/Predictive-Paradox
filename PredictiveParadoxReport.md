@@ -1,23 +1,21 @@
-Predictive Paradox : Electricity Demand Forecasting
+# Predictive Paradox : Electricity Demand Forecasting
 
-Objective: To Predict Next-Hour Electricity Demand Forecasting Using Historical, Weather Data, Economic Data.
+## Objective: To Predict Next-Hour Electricity Demand Forecasting Using Historical, Weather Data, Economic Data.
 
+-Models Used: GradientBoostingRegressor + RandomForestRegressor (60/40 ensemble) 
+-Metric: MAPE on chronological hold-out of 2023 
+-Expected MAPE: 4–5% (improved from 5% baseline without weather) 
+-Features Used: 44 engineered features across 4 categories 
 
-Models Used: GradientBoostingRegressor + RandomForestRegressor (60/40 ensemble) 
-Metric: MAPE on chronological hold-out of 2023 
-Expected MAPE: 4–5% (improved from 5% baseline without weather) 
-Features Used: 44 engineered features across 4 categories 
+##1. Handling Missing Data & Outliers
 
-
-[1] Handling Missing Data & Outliers
-
- PGCB dataset contains:
+ #PGCB dataset contains:
  1. Irregular Time Intervals
  2. Duplicate TimeStamps
  3. Missing Values
  4. Unrealistic Values
   
-STRATEGY UESD:
+#STRATEGY UESD:
 
 1.Duplicates Removed(432 duplicates removed):
 Sorted by datetime, then `drop_duplicates(keep='last')`.
@@ -38,7 +36,7 @@ Short gaps less than or equal to 6 consecutive hours were filled using time-base
 Weather sensor short drop-outs were interpolated the same limit 3 hours. The weather dataset was nearly complete with no significant gaps.
 
 
-[2]Feature Engineering
+##2. Feature Engineering
 
 To help the Model understand time patterns, I created meaningful features from the data.
 
@@ -57,6 +55,7 @@ To help the Model understand time patterns, I created meaningful features from t
 `is_weekend`: Weekend demand profile is 15% flatter and shifted later.
 
 `is_morning_peak` (9–12h) : High Demand Periods
+
 `is_evening_peak` (18–21h): High Demand Periods
 
 Cyclical encoding is important. Without it, a tree model would have to learn that hour 23 and hour 0 are similar by coincidence — cyclical features make this relationship explicit.
