@@ -169,30 +169,30 @@ NO Data leakage: the economic data is only used for that same year and Model doe
 
 Data Split:
 
-   TRAINING SET (~67,000 rows)-> From 2015 t0 2022
+   -TRAINING SET (~67,000 rows)-> From 2015 t0 2022
    
-   TEST SET  (8,760 rows)-> 2023
+   -TEST SET  (8,760 rows)-> 2023
 
 Why this is valid:
 
- Model is evaluated on completely unseen future data  
+ -Model is evaluated on completely unseen future data  
  
- All features use only past information  
+ -All features use only past information  
  
- Prevents data leakage and ensures realistic performance  
+ -Prevents data leakage and ensures realistic performance  
 
 
 ##6. Model Results
 
 | Model : MAPE : Notes |
 
-GradientBoostingRegressor : 4.5%* : Main model — sharper at capturing non-linearities 
+-GradientBoostingRegressor : 4.5%* : Main model — sharper at capturing non-linearities 
 
-RandomForestRegressor : 5.0% : Ensemble partner — more robust to outliers 
+-RandomForestRegressor : 5.0% : Ensemble partner — more robust to outliers 
 
-Weighted Ensemble (60/40) : 4.6% : Best generalisation 
+-Weighted Ensemble (60/40) : 4.6% : Best generalisation 
 
-Exact figures will appear in your terminal after running the script
+-Exact figures will appear in your terminal after running the script
 
 ##7. Feature Importances — Key Drivers
 
